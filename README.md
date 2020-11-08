@@ -26,9 +26,9 @@ After that, various articles of clothing will provide protection from the acid r
 ```
 
 - `hilevelbump` -- How much to increase the player's radiation level when rain > 0.5
-- `hipoisonbump` -- How much to increase the player's radiation poision level when rain > 0.5
+- `hipoisonbump` -- How much to increase the player's radiation poison level when rain > 0.5
 - `lolevelbump` -- How much to increase the player's radiation level when rain < 0.5
-- `lopoisonbump` -- How much to increase the player's radiation poision level when rain < 0.5
+- `lopoisonbump` -- How much to increase the player's radiation poison level when rain < 0.5
 - `notifyTimer` -- The player will be notified once while taking damage until this timer expires.
 - `protectionTimer` -- How long will fresh spawns be protected from the acid rain.
 
