@@ -28,7 +28,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Acid Rain", "RFC1920", "1.0.2")]
+    [Info("Acid Rain", "RFC1920", "1.0.3")]
     [Description("The rain can kill you - take cover!")]
 
     class AcidRain : RustPlugin
@@ -224,15 +224,15 @@ namespace Oxide.Plugins
                     {
                         scale *= 0.95f;
                     }
-                    if (item.info.name.Contains("poncho"))
+                    if (item.info.name.Equals("poncho.hide.item"))
                     {
                         scale *= 0.92f;
                     }
-                    if (item.info.name.Contains("jacket.snow"))
+                    if (item.info.name.Equals("jacket.snow.item"))
                     {
                         scale *= 0.8f;
                     }
-                    if(item.info.name.Contains("azmat"))
+                    if(item.info.name.Equals("Hazmat_Suit.item"))
                     {
                         scale *= 0.5f;
                     }
