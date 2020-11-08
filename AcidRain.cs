@@ -1,4 +1,26 @@
 ﻿//#define DEBUG
+#region License (GPL v3)
+/*
+    NextGenPVE - Prevent damage to players and objects in a Rust PVE environment
+    Copyright (c) 2020 RFC1920 <desolationoutpostpve@gmail.com>
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation; either version 2
+    of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+    Optionally you can also view the license at <http://www.gnu.org/licenses/>.
+*/
+#endregion License (GPL v3)
 using Oxide.Core;
 using Oxide.Core.Libraries.Covalence;
 using System.Collections.Generic;
@@ -6,7 +28,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Acid Rain", "RFC1920", "1.0.1", ResourceId = 1160)]
+    [Info("Acid Rain", "RFC1920", "1.0.2")]
     [Description("The rain can kill you - take cover!")]
 
     class AcidRain : RustPlugin
@@ -40,16 +62,7 @@ namespace Oxide.Plugins
             {
                 if (!pl.gameObject.GetComponent<AcidRads>())
                 {
-                    pl.gameObject.AddComponent<AcidRads>();
-                    var c = pl.GetComponent<AcidRads>();
-                    c.Options = new Options
-                    {
-                        lolevelbump = configData.Options.lolevelbump,
-                        lopoisonbump = configData.Options.lopoisonbump,
-                        hilevelbump = configData.Options.hilevelbump,
-                        hipoisonbump = configData.Options.hipoisonbump,
-                        notifyTimer = configData.Options.notifyTimer
-                    };
+                    AddRadComponent(pl);
                 }
             }
         }
@@ -70,16 +83,7 @@ namespace Oxide.Plugins
         {
             if (!player.gameObject.GetComponent<AcidRads>())
             {
-                player.gameObject.AddComponent<AcidRads>();
-                var c = player.GetComponent<AcidRads>();
-                c.Options = new Options
-                {
-                    lolevelbump = configData.Options.lolevelbump,
-                    lopoisonbump = configData.Options.lopoisonbump,
-                    hilevelbump = configData.Options.hilevelbump,
-                    hipoisonbump = configData.Options.hipoisonbump,
-                    notifyTimer = configData.Options.notifyTimer
-                };
+                AddRadComponent(player);
             }
             if (!protectedPlayers.Contains(player.userID))
             {
@@ -134,6 +138,21 @@ namespace Oxide.Plugins
         private void SaveConfig(ConfigData config)
         {
             Config.WriteObject(config, true);
+        }
+        #endregion
+
+        #region helper
+        private void AddRadComponent(BasePlayer player)
+        {
+            var c = player.gameObject.AddComponent<AcidRads>();
+            c.Options = new Options
+            {
+                lolevelbump = configData.Options.lolevelbump,
+                lopoisonbump = configData.Options.lopoisonbump,
+                hilevelbump = configData.Options.hilevelbump,
+                hipoisonbump = configData.Options.hipoisonbump,
+                notifyTimer = configData.Options.notifyTimer
+            };
         }
         #endregion
 
