@@ -28,7 +28,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Acid Rain", "RFC1920", "1.0.3")]
+    [Info("Acid Rain", "RFC1920", "1.0.4")]
     [Description("The rain can kill you - take cover!")]
 
     class AcidRain : RustPlugin
@@ -182,7 +182,13 @@ namespace Oxide.Plugins
             private bool notified = false;
 
             private void Awake() => player = GetComponentInParent<BasePlayer>();
-            private void OnDestroy() => timer.Destroy();
+            private void OnDestroy()
+            {
+                if (timer != null)
+                {
+                    timer.Destroy();
+                }
+            }
 
             private void NotifyTimer(bool start = false)
             {
