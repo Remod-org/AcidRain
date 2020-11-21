@@ -6,6 +6,14 @@ New spawns are protected by the protectionTimer, which defaults to 5 minutes (30
 
 After that, various articles of clothing will provide protection from the acid rain.  However, the slightest bit of wetness can lead to exposure.  So, choose your garments well.
 
+### Permissions
+    - acidrain.admin - Allows use of commands below
+
+### Commands
+    - /arstart - Enable Acid Rain
+    - /arstop  - Disable Acid Rain
+	- /inno    - Innoculate (heal) all online players
+
 ### Configuration
 ``` json
 {
@@ -15,7 +23,8 @@ After that, various articles of clothing will provide protection from the acid r
     "lolevelbump": 0.2,
     "lopoisonbump": 0.1,
     "notifyTimer": 60.0,
-    "protectionTimer": 300.0
+    "protectionTimer": 300.0,
+    "EnableOnLoad": true
   },
   "Version": {
     "Major": 1,
@@ -31,6 +40,7 @@ After that, various articles of clothing will provide protection from the acid r
 - `lopoisonbump` -- How much to increase the player's radiation poison level when rain < 0.5
 - `notifyTimer` -- The player will be notified once while taking damage until this timer expires.
 - `protectionTimer` -- How long will fresh spawns be protected from the acid rain.
+- `EnableOnLoad` -- Enable acid rain on plugin load (disable for external scheduling, etc.)
 
 
 ### Future plans, maybe

@@ -21,6 +21,7 @@
     Optionally you can also view the license at <http://www.gnu.org/licenses/>.
 */
 #endregion License (GPL v3)
+using Network;
 using Oxide.Core;
 using Oxide.Core.Libraries.Covalence;
 using System.Collections.Generic;
@@ -28,7 +29,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Acid Rain", "RFC1920", "1.0.4")]
+    [Info("Acid Rain", "RFC1920", "1.0.5")]
     [Description("The rain can kill you - take cover!")]
 
     class AcidRain : RustPlugin
@@ -36,6 +37,8 @@ namespace Oxide.Plugins
         private ConfigData configData;
         public static AcidRain Instance = null;
         public List<ulong> protectedPlayers = new List<ulong>();
+        private bool enabled = true;
+        private const string permAdmin = "acidrain.admin";
 
         #region Message
         private string Lang(string key, string id = null, params object[] args) => string.Format(lang.GetMessage(key, this, id), args);
@@ -48,7 +51,12 @@ namespace Oxide.Plugins
             lang.RegisterMessages(new Dictionary<string, string>
             {
                 ["seekshelter"] = "The ACID RAIN will KILL YOU!  Seek shelter NOW!!!",
+                ["notauthorized"] = "You are not authorized for this command!",
                 ["beware"] = "Beware of the ACID RAIN!",
+                ["enabled"] = "Acid Rain has been ENabled.",
+                ["disabled"] = "Acid Rain has been DISabled.",
+                ["innoculated"] = "All players have been innoculated!",
+                ["innoculation"] = "You have been innoculated!",
                 ["protected"] = "You have {0} minutes to protect yourself from the ACID RAIN!",
                 ["recovered"] = "You have recovered from the ACID RAIN."
             }, this);
@@ -57,7 +65,14 @@ namespace Oxide.Plugins
         private void Loaded()
         {
             Instance = this;
+            permission.RegisterPermission(permAdmin, this);
+            AddCovalenceCommand("inno", "CmdInnoculate");
+            AddCovalenceCommand("arstop", "CmdDisable");
+            AddCovalenceCommand("arstart", "CmdEnable");
+
             LoadConfigVariables();
+            enabled = configData.Options.EnableOnLoad;
+
             foreach (var pl in BasePlayer.activePlayerList)
             {
                 if (!pl.gameObject.GetComponent<AcidRads>())
@@ -132,6 +147,7 @@ namespace Oxide.Plugins
             config.Options.lopoisonbump = 0.1f;
             config.Options.notifyTimer = 60f;
             config.Options.protectionTimer = 300f;
+            config.Options.EnableOnLoad = true;
 
             SaveConfig(config);
         }
@@ -156,6 +172,63 @@ namespace Oxide.Plugins
         }
         #endregion
 
+        #region commands
+        [Command("arstop")]
+        private void CmdDisable(IPlayer iplayer, string command, string[] args)
+        {
+            if (!iplayer.HasPermission(permAdmin)) { Message(iplayer, "notauthorized"); return; }
+            enabled = false;
+            Message(iplayer, "disabled");
+        }
+
+        [Command("arstart")]
+        private void CmdEnable(IPlayer iplayer, string command, string[] args)
+        {
+            if (!iplayer.HasPermission(permAdmin)) { Message(iplayer, "notauthorized"); return; }
+            enabled = true;
+            Message(iplayer, "enabled");
+        }
+
+        [Command("inno")]
+        private void CmdInnoculate(IPlayer iplayer, string command, string[] args)
+        {
+            if (!iplayer.HasPermission(permAdmin)) { Message(iplayer, "notauthorized"); return; }
+            if(args.Length > 0 && args[0] == "stop")
+            {
+                enabled = false;
+                Message(iplayer, "disabled");
+            }
+            foreach (var pl in BasePlayer.activePlayerList)
+            {
+#if DEBUG
+                Puts($"Innoculating {pl.displayName}");
+#endif
+                if (pl.isActiveAndEnabled)
+                {
+                    SendEffectTo("assets/prefabs/tools/medical syringe/effects/inject_friend.prefab", pl);
+                    if (pl.IsWounded()) pl.StopWounded();
+                    pl.Heal(100f);
+                    SendReply(pl, Instance.Lang("innoculation"));
+                }
+            }
+            Message(iplayer, "innoculated");
+        }
+
+        private void SendEffectTo(string effect, BasePlayer player)
+        {
+            if (player == null) return;
+
+            var EffectInstance = new Effect();
+            EffectInstance.Init(Effect.Type.Generic, player, 0, Vector3.up, Vector3.zero);
+            EffectInstance.pooledstringid = StringPool.Get(effect);
+            Net.sv.write.Start();
+            Net.sv.write.PacketID(Network.Message.Type.Effect);
+            EffectInstance.WriteToStream(Net.sv.write);
+            Net.sv.write.Send(new SendInfo(player.net.connection));
+            EffectInstance.Clear();
+        }
+        #endregion
+
         #region classes
         private class ConfigData
         {
@@ -171,6 +244,7 @@ namespace Oxide.Plugins
             public float lopoisonbump;
             public float notifyTimer;
             public float protectionTimer;
+            public bool EnableOnLoad = true;
         }
 
         class AcidRads : MonoBehaviour
@@ -204,6 +278,7 @@ namespace Oxide.Plugins
 
             private float CheckProtection()
             {
+                if (!Instance.enabled) return 0f;
                 float scale = 1f;
                 foreach (var item in player.inventory.containerWear.itemList)
                 {
