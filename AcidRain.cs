@@ -29,7 +29,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Acid Rain", "RFC1920", "1.0.5")]
+    [Info("Acid Rain", "RFC1920", "1.0.6")]
     [Description("The rain can kill you - take cover!")]
 
     class AcidRain : RustPlugin
@@ -108,7 +108,8 @@ namespace Oxide.Plugins
 
         void OnUserRespawned(IPlayer player)
         {
-            Message(player, "protected");
+            if (player == null) return;
+            Message(player, "protected", (configData.Options.protectionTimer / 60).ToString());
             protectedPlayers.Add((player.Object as BasePlayer).userID);
             timer.Once(configData.Options.protectionTimer, () =>
             {
