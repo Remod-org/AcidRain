@@ -29,13 +29,13 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Acid Rain", "RFC1920", "1.0.7")]
+    [Info("Acid Rain", "RFC1920", "1.0.9")]
     [Description("The rain can kill you - take cover!")]
 
-    class AcidRain : RustPlugin
+    internal class AcidRain : RustPlugin
     {
         private ConfigData configData;
-        public static AcidRain Instance = null;
+        public static AcidRain Instance;
         public List<ulong> protectedPlayers = new List<ulong>();
         private bool PluginEnabled;
         private const string permAdmin = "acidrain.admin";
@@ -75,7 +75,7 @@ namespace Oxide.Plugins
 
             if (PluginEnabled)
             {
-                foreach (var pl in BasePlayer.activePlayerList)
+                foreach (BasePlayer pl in BasePlayer.activePlayerList)
                 {
                     if (configData.Options.debug) Puts($"Adding object to active player {pl.UserIDString}");
                     AddRadComponent(pl);
@@ -83,7 +83,7 @@ namespace Oxide.Plugins
 
                 if (configData.Options.damageSleepers)
                 {
-                    foreach (var pl in BasePlayer.sleepingPlayerList)
+                    foreach (BasePlayer pl in BasePlayer.sleepingPlayerList)
                     {
                         if (configData.Options.debug) Puts($"Adding object to sleeper {pl.UserIDString}");
                         AddRadComponent(pl);
@@ -93,16 +93,17 @@ namespace Oxide.Plugins
         }
 
         private void OnServerShutdown() => Unload();
+
         private void Unload()
         {
-            foreach (var pl in BasePlayer.activePlayerList)
+            foreach (BasePlayer pl in BasePlayer.activePlayerList)
             {
                 if (pl.GetComponent<AcidRads>())
                 {
                     UnityEngine.Object.Destroy(pl.gameObject.GetComponent<AcidRads>());
                 }
             }
-            foreach (var pl in BasePlayer.sleepingPlayerList)
+            foreach (BasePlayer pl in BasePlayer.sleepingPlayerList)
             {
                 if (pl.gameObject.GetComponent<AcidRads>())
                 {
@@ -116,11 +117,7 @@ namespace Oxide.Plugins
             if (PluginEnabled)
             {
                 AddRadComponent(player);
-
-                if (!protectedPlayers.Contains(player.userID))
-                {
-                    SendReply(player, Instance.Lang("beware", player.UserIDString));
-                }
+                AddPlayerProtection(player);
             }
         }
 
@@ -128,7 +125,7 @@ namespace Oxide.Plugins
         {
             if (!configData.Options.damageSleepers)
             {
-                var c = player.gameObject.GetComponent<AcidRads>();
+                AcidRads c = player.gameObject.GetComponent<AcidRads>();
                 if (c != null)
                 {
                     UnityEngine.Object.Destroy(c);
@@ -136,18 +133,13 @@ namespace Oxide.Plugins
             }
         }
 
-        void OnUserRespawned(IPlayer player)
+        private void OnUserRespawned(IPlayer player)
         {
             if (player == null) return;
             if (PluginEnabled)
             {
-                Message(player, "protectedm", (Math.Floor(configData.Options.protectionTimer / 60)).ToString());
-                protectedPlayers.Add((player.Object as BasePlayer).userID);
-                timer.Once(configData.Options.protectionTimer, () =>
-                {
-                    protectedPlayers.Remove((player.Object as BasePlayer).userID);
-                    Message(player, "beware");
-                });
+                AddRadComponent(player.Object as BasePlayer);
+                AddPlayerProtection(player.Object as BasePlayer);
             }
         }
         #endregion hooks
@@ -160,6 +152,7 @@ namespace Oxide.Plugins
             configData.Version = Version;
             SaveConfig(configData);
         }
+
         protected override void LoadDefaultConfig()
         {
             Puts("Creating new config file.");
@@ -182,6 +175,7 @@ namespace Oxide.Plugins
 
             SaveConfig(config);
         }
+
         private void SaveConfig(ConfigData config)
         {
             Config.WriteObject(config, true);
@@ -193,7 +187,7 @@ namespace Oxide.Plugins
         {
             if (player == null) return;
 
-            var EffectInstance = new Effect();
+            Effect EffectInstance = new Effect();
             EffectInstance.Init(Effect.Type.Generic, player, 0, Vector3.up, Vector3.zero);
             EffectInstance.pooledstringid = StringPool.Get(effect);
             Net.sv.write.Start();
@@ -209,7 +203,7 @@ namespace Oxide.Plugins
             {
                 UnityEngine.Object.Destroy(player.gameObject.GetComponent<AcidRads>());
             }
-            var c = player.gameObject.AddComponent<AcidRads>();
+            AcidRads c = player.gameObject.AddComponent<AcidRads>();
             c.Options = new Options
             {
                 lolevelbump = configData.Options.lolevelbump,
@@ -218,6 +212,21 @@ namespace Oxide.Plugins
                 hipoisonbump = configData.Options.hipoisonbump,
                 notifyTimer = configData.Options.notifyTimer
             };
+        }
+
+        private void AddPlayerProtection(BasePlayer player)
+        {
+            Message(player.IPlayer, "protectedm", Math.Floor(configData.Options.protectionTimer / 60).ToString());
+            protectedPlayers.Add(player.userID);
+            if (configData.Options.debug) Puts($"Starting protection timer for {player.userID}");
+            timer.Once(configData.Options.protectionTimer, () => RemovePlayerProtection(player));
+        }
+
+        private void RemovePlayerProtection(BasePlayer player)
+        {
+            if (configData.Options.debug) Puts($"Removing protection timer for {player.UserIDString}");
+            protectedPlayers.Remove(player.userID);
+            Message(player.IPlayer, "beware");
         }
         #endregion
 
@@ -248,7 +257,7 @@ namespace Oxide.Plugins
                 Message(iplayer, "disabled");
             }
 
-            foreach (var pl in BasePlayer.activePlayerList)
+            foreach (BasePlayer pl in BasePlayer.activePlayerList)
             {
                 if (configData.Options.debug) Puts($"Innoculating {pl.displayName}");
                 if (pl.isActiveAndEnabled)
@@ -262,7 +271,7 @@ namespace Oxide.Plugins
 
             if (configData.Options.damageSleepers)
             {
-                foreach (var pl in BasePlayer.sleepingPlayerList)
+                foreach (BasePlayer pl in BasePlayer.sleepingPlayerList)
                 {
                     if (configData.Options.debug) Puts($"Innoculating {pl.displayName}");
                     if (pl.isActiveAndEnabled)
@@ -299,26 +308,24 @@ namespace Oxide.Plugins
             public bool debug;
         }
 
-        class AcidRads : MonoBehaviour
+        private class AcidRads : MonoBehaviour
         {
             public Options Options = new Options();
             private Timer timer;
 
             private BasePlayer player;
-            private bool notified = false;
+            private bool notified;
 
             private void Awake() => player = GetComponentInParent<BasePlayer>();
+
             private void OnDestroy()
             {
-                if (timer != null)
-                {
-                    timer.Destroy();
-                }
+                timer?.Destroy();
             }
 
             private void NotifyTimer(bool start = false)
             {
-                if (timer != null && timer.Destroyed)
+                if (timer?.Destroyed == true)
                 {
                     notified = false;
                 }
@@ -333,7 +340,7 @@ namespace Oxide.Plugins
                 if (!Instance.PluginEnabled) return 0f;
                 float scale = 1f;
                 string sleeping = "";
-                foreach (var item in player.inventory.containerWear.itemList)
+                foreach (Item item in player.inventory.containerWear.itemList)
                 {
                     if (Instance.configData.Options.debug) Instance.Puts($"Player {player.displayName} wearing {item.info.name}");
                     if (item.info.name.Contains("hat") || item.info.name.Contains("cap"))
@@ -378,9 +385,9 @@ namespace Oxide.Plugins
                 return scale;
             }
 
-            void FixedUpdate()
+            private void FixedUpdate()
             {
-                var currentrain = Climate.GetRain(player.transform.position);
+                float currentrain = Climate.GetRain(player.transform.position);
                 float level = 0;
                 float poison = 0;
                 bool valid = false;
