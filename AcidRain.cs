@@ -29,7 +29,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Acid Rain", "RFC1920", "1.0.9")]
+    [Info("Acid Rain", "RFC1920", "1.0.8")]
     [Description("The rain can kill you - take cover!")]
 
     internal class AcidRain : RustPlugin
