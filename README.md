@@ -24,12 +24,13 @@ After that, various articles of clothing will provide protection from the acid r
     "lopoisonbump": 0.1,
     "notifyTimer": 60.0,
     "protectionTimer": 300.0,
+    "swimProtection": false,
     "EnableOnLoad": true
   },
   "Version": {
     "Major": 1,
-    "Minor": 0,
-    "Patch": 1
+    "Minor": 1,
+    "Patch": 0
   }
 }
 ```
@@ -40,6 +41,7 @@ After that, various articles of clothing will provide protection from the acid r
 - `lopoisonbump` -- How much to increase the player's radiation poison level when rain < 0.5
 - `notifyTimer` -- The player will be notified once while taking damage until this timer expires.
 - `protectionTimer` -- How long will fresh spawns be protected from the acid rain.
+- `swimProtection` -- Provide protection for players while swimming (currently the same as sleepers at 0.1 or 10%)
 - `EnableOnLoad` -- Enable acid rain on plugin load (disable for external scheduling, etc.)
 
 

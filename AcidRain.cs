@@ -29,7 +29,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Acid Rain", "RFC1920", "1.0.9")]
+    [Info("Acid Rain", "RFC1920", "1.1.0")]
     [Description("The rain can kill you - take cover!")]
 
     internal class AcidRain : RustPlugin
@@ -149,6 +149,10 @@ namespace Oxide.Plugins
         {
             configData = Config.ReadObject<ConfigData>();
 
+            if (configData.Version < new VersionNumber(1, 1, 0))
+            {
+                configData.Options.swimProtection = false;
+            }
             configData.Version = Version;
             SaveConfig(configData);
         }
@@ -305,6 +309,7 @@ namespace Oxide.Plugins
             public float notifyTimer;
             public float protectionTimer;
             public bool damageSleepers;
+            public bool swimProtection;
             public bool EnableOnLoad;
             public bool debug;
         }
@@ -341,6 +346,7 @@ namespace Oxide.Plugins
                 if (!Instance.PluginEnabled) return 0f;
                 float scale = 1f;
                 string sleeping = "";
+                string swimming = "";
                 foreach (Item item in player.inventory.containerWear.itemList)
                 {
                     if (Instance.configData.Options.debug) Instance.Puts($"Player {player.displayName} wearing {item.info.name}");
@@ -382,7 +388,12 @@ namespace Oxide.Plugins
                     scale = 0.1f;
                     sleeping = "(sleeping)";
                 }
-                if (Instance.configData.Options.debug) Instance.Puts($"Player {player.displayName}{sleeping} total protection scale = {scale.ToString()}");
+                if (player.IsSwimming() && Instance.configData.Options.swimProtection)
+                {
+                    scale = 0.1f;
+                    swimming = "(swimming)";
+                }
+                if (Instance.configData.Options.debug) Instance.Puts($"Player {player.displayName}{sleeping}{swimming} total protection scale = {scale.ToString()}");
                 return scale;
             }
 
