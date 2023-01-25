@@ -1,7 +1,7 @@
 #region License (GPL v3)
 /*
-    NextGenPVE - Prevent damage to players and objects in a Rust PVE environment
-    Copyright (c) 2020 RFC1920 <desolationoutpostpve@gmail.com>
+    AcidRain - Rain brings radiation - BEWARE
+    Copyright (c) 2020-2023 RFC1920 <desolationoutpostpve@gmail.com>
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -26,10 +26,11 @@ using Oxide.Core.Libraries.Covalence;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Oxide.Plugins
 {
-    [Info("Acid Rain", "RFC1920", "1.1.0")]
+    [Info("Acid Rain", "RFC1920", "1.1.1")]
     [Description("The rain can kill you - take cover!")]
 
     internal class AcidRain : RustPlugin
@@ -69,6 +70,7 @@ namespace Oxide.Plugins
             AddCovalenceCommand("inno", "CmdInnoculate");
             AddCovalenceCommand("arstop", "CmdDisable");
             AddCovalenceCommand("arstart", "CmdEnable");
+            //AddCovalenceCommand("aradd", "CmdAddTo");
 
             LoadConfigVariables();
             PluginEnabled = configData.Options.EnableOnLoad;
@@ -79,6 +81,7 @@ namespace Oxide.Plugins
                 {
                     if (configData.Options.debug) Puts($"Adding object to active player {pl.UserIDString}");
                     AddRadComponent(pl);
+                    AddPlayerProtection(pl);
                 }
 
                 if (configData.Options.damageSleepers)
@@ -87,6 +90,7 @@ namespace Oxide.Plugins
                     {
                         if (configData.Options.debug) Puts($"Adding object to sleeper {pl.UserIDString}");
                         AddRadComponent(pl);
+                        AddPlayerProtection(pl);
                     }
                 }
             }
@@ -205,17 +209,20 @@ namespace Oxide.Plugins
         {
             if (player.gameObject.GetComponent<AcidRads>())
             {
+                if (configData.Options.debug) Puts($"Destroying existing AcidRad component for {player.displayName}");
                 UnityEngine.Object.Destroy(player.gameObject.GetComponent<AcidRads>());
             }
+            if (configData.Options.debug) Puts($"Adding new AcidRad component to {player.displayName}");
             AcidRads c = player.gameObject.AddComponent<AcidRads>();
-            c.Options = new Options
+
+            c.SetOptions(new Options
             {
                 lolevelbump = configData.Options.lolevelbump,
                 lopoisonbump = configData.Options.lopoisonbump,
                 hilevelbump = configData.Options.hilevelbump,
                 hipoisonbump = configData.Options.hipoisonbump,
                 notifyTimer = configData.Options.notifyTimer
-            };
+            });
         }
 
         private void AddPlayerProtection(BasePlayer player)
@@ -233,9 +240,42 @@ namespace Oxide.Plugins
             protectedPlayers.Remove(player.userID);
             SendReply(player, Lang("beware"));
         }
+
+        //private object RaycastAll<T>(Ray ray) where T : BaseEntity
+        //{
+        //    RaycastHit[] hits = Physics.RaycastAll(ray);
+        //    GamePhysics.Sort(hits);
+        //    const float distance = 100f;
+        //    object target = false;
+        //    foreach (RaycastHit hit in hits)
+        //    {
+        //        BaseEntity ent = hit.GetEntity();
+        //        if (ent is T && hit.distance < distance)
+        //        {
+        //            target = ent;
+        //            break;
+        //        }
+        //    }
+
+        //    return target;
+        //}
         #endregion
 
         #region commands
+        //[Command("aradd")]
+        //private void CmdAddTo(IPlayer iplayer, string command, string[] args)
+        //{
+        //    if (!iplayer.HasPermission(permAdmin)) { Message(iplayer, "notauthorized"); return; }
+
+        //    BasePlayer player = iplayer.Object as BasePlayer;
+        //    object target = RaycastAll<BaseEntity>(player.eyes.HeadRay());
+        //    if (target is BasePlayer)
+        //    {
+        //        AddRadComponent(target as BasePlayer);
+        //        AddPlayerProtection(target as BasePlayer);
+        //    }
+        //}
+
         [Command("arstop")]
         private void CmdDisable(IPlayer iplayer, string command, string[] args)
         {
@@ -316,13 +356,31 @@ namespace Oxide.Plugins
 
         private class AcidRads : MonoBehaviour
         {
-            public Options Options = new Options();
+            public Options Options;
             private Timer timer;
 
             private BasePlayer player;
             private bool notified;
 
-            private void Awake() => player = GetComponentInParent<BasePlayer>();
+            private void Awake()
+            {
+                player = GetComponentInParent<BasePlayer>();
+                Options = new Options();
+            }
+
+            public void SetOptions(Options options)
+            {
+                if (Instance.configData.Options.debug) Instance.Puts($"Setting options for {player?.displayName}");
+                Options = new Options()
+                {
+                    swimProtection = options.swimProtection,
+                    hilevelbump = options.hilevelbump,
+                    lolevelbump = options.lolevelbump,
+                    hipoisonbump = options.hipoisonbump,
+                    lopoisonbump = options.lolevelbump,
+                    notifyTimer = options.notifyTimer
+                };
+            }
 
             private void OnDestroy()
             {
@@ -393,7 +451,7 @@ namespace Oxide.Plugins
                     scale = 0.1f;
                     swimming = "(swimming)";
                 }
-                if (Instance.configData.Options.debug) Instance.Puts($"Player {player.displayName}{sleeping}{swimming} total protection scale = {scale.ToString()}");
+                if (Instance.configData.Options.debug) Instance.Puts($"Player {player.displayName}{sleeping}{swimming} total protection scale = {scale}");
                 return scale;
             }
 
@@ -407,7 +465,7 @@ namespace Oxide.Plugins
                 if (player.metabolism.wetness.lastValue > 0 && !Instance.protectedPlayers.Contains(player.userID))
                 {
                     float scale = CheckProtection();
-                    if (Instance.configData.Options.debug) Instance.Puts($"Working on {player.UserIDString}, currentrain: {currentrain.ToString()}");
+                    if (Instance.configData.Options.debug) Instance.Puts($"Working on {player.UserIDString}, currentrain: {currentrain}");
 
                     if (currentrain > 0.5f)
                     {
