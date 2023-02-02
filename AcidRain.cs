@@ -1,4 +1,4 @@
-#region License (GPL v3)
+#region License (GPL v2)
 /*
     AcidRain - Rain brings radiation - BEWARE
     Copyright (c) 2020-2023 RFC1920 <desolationoutpostpve@gmail.com>
@@ -6,7 +6,7 @@
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
     as published by the Free Software Foundation; either version 2
-    of the License, or (at your option) any later version.
+    of the License only.
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,18 +19,17 @@
 
     Optionally you can also view the license at <http://www.gnu.org/licenses/>.
 */
-#endregion License (GPL v3)
+#endregion License (GPL v2)
 using Network;
 using Oxide.Core;
 using Oxide.Core.Libraries.Covalence;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace Oxide.Plugins
 {
-    [Info("Acid Rain", "RFC1920", "1.1.1")]
+    [Info("Acid Rain", "RFC1920", "1.1.2")]
     [Description("The rain can kill you - take cover!")]
 
     internal class AcidRain : RustPlugin
@@ -198,10 +197,10 @@ namespace Oxide.Plugins
             Effect EffectInstance = new Effect();
             EffectInstance.Init(Effect.Type.Generic, player, 0, Vector3.up, Vector3.zero);
             EffectInstance.pooledstringid = StringPool.Get(effect);
-            Net.sv.write.Start();
-            Net.sv.write.PacketID(Network.Message.Type.Effect);
-            EffectInstance.WriteToStream(Net.sv.write);
-            Net.sv.write.Send(new SendInfo(player.net.connection));
+            NetWrite writer = Net.sv.StartWrite();
+            writer.PacketID(Network.Message.Type.Effect);
+            EffectInstance.WriteToStream(writer);
+            writer.Send(new SendInfo(player.net.connection));
             EffectInstance.Clear();
         }
 
