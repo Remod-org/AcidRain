@@ -29,14 +29,14 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Acid Rain", "RFC1920", "1.1.2")]
+    [Info("Acid Rain", "RFC1920", "1.1.3")]
     [Description("The rain can kill you - take cover!")]
 
     internal class AcidRain : RustPlugin
     {
         private ConfigData configData;
         public static AcidRain Instance;
-        public List<ulong> protectedPlayers = new List<ulong>();
+        public List<ulong> protectedPlayers = new();
         private bool PluginEnabled;
         private const string permAdmin = "acidrain.admin";
 
@@ -163,7 +163,7 @@ namespace Oxide.Plugins
         protected override void LoadDefaultConfig()
         {
             Puts("Creating new config file.");
-            ConfigData config = new ConfigData
+            ConfigData config = new()
             {
                 Options = new Options()
                 {
@@ -194,14 +194,14 @@ namespace Oxide.Plugins
         {
             if (player == null) return;
 
-            Effect EffectInstance = new Effect();
+            Effect EffectInstance = new();
             EffectInstance.Init(Effect.Type.Generic, player, 0, Vector3.up, Vector3.zero);
             EffectInstance.pooledstringid = StringPool.Get(effect);
             NetWrite writer = Net.sv.StartWrite();
             writer.PacketID(Network.Message.Type.Effect);
             EffectInstance.WriteToStream(writer);
             writer.Send(new SendInfo(player.net.connection));
-            EffectInstance.Clear();
+            EffectInstance.Clear(includeNetworkData: true);
         }
 
         private void AddRadComponent(BasePlayer player)
@@ -427,15 +427,15 @@ namespace Oxide.Plugins
                     {
                         scale *= 0.95f;
                     }
-                    if (item.info.name.Equals("poncho.hide.item"))
+                    if (item.info.name.Equals("poncho.hide.item", StringComparison.OrdinalIgnoreCase))
                     {
                         scale *= 0.92f;
                     }
-                    if (item.info.name.Equals("jacket.snow.item"))
+                    if (item.info.name.Equals("jacket.snow.item", StringComparison.OrdinalIgnoreCase))
                     {
                         scale *= 0.8f;
                     }
-                    if (item.info.name.Equals("Hazmat_Suit.item"))
+                    if (item.info.name.Equals("Hazmat_Suit.item", StringComparison.OrdinalIgnoreCase))
                     {
                         scale *= 0.5f;
                     }
