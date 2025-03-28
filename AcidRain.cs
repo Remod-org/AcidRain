@@ -29,7 +29,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Acid Rain", "RFC1920", "1.1.3")]
+    [Info("Acid Rain", "RFC1920", "1.1.4")]
     [Description("The rain can kill you - take cover!")]
 
     internal class AcidRain : RustPlugin
@@ -201,7 +201,7 @@ namespace Oxide.Plugins
             writer.PacketID(Network.Message.Type.Effect);
             EffectInstance.WriteToStream(writer);
             writer.Send(new SendInfo(player.net.connection));
-            EffectInstance.Clear(includeNetworkData: true);
+            EffectInstance.Clear();
         }
 
         private void AddRadComponent(BasePlayer player)
